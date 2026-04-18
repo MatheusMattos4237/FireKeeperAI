@@ -1,5 +1,4 @@
 import streamlit as st
-import google.genai as genai
 import os
 from dotenv import load_dotenv
 
@@ -11,7 +10,21 @@ if not api_key:
     )
     st.stop()
 
-client = genai.Client(api_key=api_key)
+try:
+    from google.genai import client as genai_client
+
+    client = genai_client.Client(api_key=api_key)
+    USE_NEW_API = True
+except ImportError:
+    try:
+        import google.generativeai as genai
+
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        USE_NEW_API = False
+    except:
+        st.error("⚠️ API não disponível")
+        st.stop()
 
 st.set_page_config(
     page_title="FireKeeper AI",
@@ -98,11 +111,15 @@ if prompt:
         for msg in st.session_state.messages[:-1]:
             chat_history += f"{msg['role']}: {msg['content']}\n"
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash", contents=chat_history + f"user: {prompt}"
-        )
+        if USE_NEW_API:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash", contents=chat_history + f"user: {prompt}"
+            )
+            response_text = response.text
+        else:
+            response = model.generate_content(chat_history + f"user: {prompt}")
+            response_text = response.text
 
-        response_text = response.text
         st.session_state.messages.append(
             {"role": "assistant", "content": response_text}
         )
