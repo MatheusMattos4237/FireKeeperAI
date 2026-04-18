@@ -113,7 +113,7 @@ if prompt:
 
         if USE_NEW_API:
             response = client.models.generate_content(
-                model="gemini-2.0-flash", contents=chat_history + f"user: {prompt}"
+                model="gemini-2.5-flash", contents=chat_history + f"user: {prompt}"
             )
             response_text = response.text
         else:
